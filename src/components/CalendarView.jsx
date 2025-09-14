@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { 
+    fetchEvents as fetchEventsThunk, 
+    updateEvent as updateEventThunk, 
+    deleteEvent as deleteEventThunk 
+  } from "../features/events/eventsSlice";
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import {
   format,
@@ -11,8 +17,11 @@ import { enGB } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../CalendarOverrides.css";
 import EventsForm from "../features/events/EventsForm";
+import Modal from "react-modal";
+import { FaRegClock } from "react-icons/fa";
 
-/** ---- Localizer ---- */
+Modal.setAppElement("#root"); 
+
 const locales = { "en-GB": enGB };
 const localizer = dateFnsLocalizer({
   format,
@@ -22,7 +31,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-/** ---- Status mapping (for event coloring) ---- */
+/* Status mapping (for event coloring) */
 const EVENT_STATUS = {
   1: { label: "Pending", color: "#718096" },
   2: { label: "Confirmed", color: "#38A169" },
@@ -31,7 +40,7 @@ const EVENT_STATUS = {
   5: { label: "Cancelled", color: "#9F7AEA" },
 };
 
-/** ---- Helpers ---- */
+
 const parseDate = (d) => (typeof d === "string" ? parseISO(d) : new Date(d));
 const toDatetimeLocal = (date) => {
   if (!date) return "";
@@ -41,38 +50,34 @@ const toDatetimeLocal = (date) => {
 };
 
 export default function UserCalendar() {
-  const [events, setEvents] = useState([]);
+  const dispatch = useDispatch();
+  const eventsFromStore = useSelector((state) => state.events.items);
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState(Views.WEEK);
+ 
+  // Event details
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // control EventsForm modal
+  // EventsForm modal
   const [modalOpen, setModalOpen] = useState(false);
   const [prefill, setPrefill] = useState(null);
 
-  /** Fetch events from Django backend */
-  const fetchEvents = useCallback(async () => {
-    try {
-      const res = await fetch("/api/events");
-      const data = await res.json();
-      const mapped = data.map((e) => ({
-        id: e.id ?? e.pk,
-        title: e.title ?? e.name ?? "Event",
-        start: parseDate(e.start_time ?? e.start),
-        end: parseDate(e.end_time ?? e.end),
-        status: e.status ?? 1,
-        raw: e,
-      }));
-      setEvents(mapped);
-    } catch (err) {
-      console.error("Failed to fetch events:", err);
-    }
-  }, []);
+  const mappedEvents = eventsFromStore.map((e) => ({
+    id: e.id,
+    title: e.event_type, // what shows inside calendar block
+    start: parseDate(e.start_time),
+    end: parseDate(e.end_time),
+    status: e.status ?? 1,
+    event_type: e.event_type, // keep original for coloring
+    raw: e,
+  }));
 
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    dispatch(fetchEventsThunk());
+  }, [dispatch]);
 
-  /** Navigation */
+  /* Navigation */
   const moveDate = (direction) => {
     const d = new Date(date);
     if (view === Views.MONTH) d.setMonth(d.getMonth() + direction);
@@ -82,7 +87,7 @@ export default function UserCalendar() {
     setDate(new Date(d));
   };
 
-  /** Toolbar Add Event -> open EventsForm */
+  /* Add Event -> open EventsForm */
   const openBlankForm = () => {
     setPrefill({
       startTime: toDatetimeLocal(new Date()),
@@ -92,7 +97,7 @@ export default function UserCalendar() {
     setModalOpen(true);
   };
 
-  /** Slot selection -> open EventsForm with prefilled start/end */
+  /* Slot selection -> open EventsForm Time Prefill*/
   const handleSelectSlot = (slotInfo) => {
     setPrefill({
       startTime: toDatetimeLocal(slotInfo.start),
@@ -102,82 +107,91 @@ export default function UserCalendar() {
     setModalOpen(true);
   };
 
+  
+const handleEdit = () => {
+    if (!selectedEvent) return;
+  
+    setPrefill({
+      ...selectedEvent,
+      startTime: selectedEvent.start_time,
+      endTime: selectedEvent.end_time,
+      eventType: selectedEvent.event_type,
+    });
+    setDetailsOpen(false);
+    setModalOpen(true);
+  };
+  
+  const handleDelete = async () => {
+    if (!selectedEvent?.id) return;
+  
+    await dispatch(deleteEventThunk(selectedEvent.id));
+    setDetailsOpen(false);
+    dispatch(fetchEventsThunk());
+  };
+
+  
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event.raw);
+    setDetailsOpen(true);
+  };
+
+  const EVENT_TYPE_STYLES = {
+    MEETING: "bg-blue-600",
+    "1ST_APPOINTMENT": "bg-purple-600",
+    PRESENTATION: "bg-green-600",
+    EVENT: "bg-pink-600",
+  };
+
+  const EventItem = ({ event }) => (
+    <div className="flex flex-col h-full w-full px-2 py-1 rounded-md text-white">
+     
+      <span className="text-sm font-semibold truncate">{event.title}</span>
+  
+      <div className="flex items-center text-xs mt-1">
+        <FaRegClock className="mr-1 opacity-90" size={12} />
+        {event.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} –{" "}
+        {event.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-5 font-sans">
-      {/* Top toolbar */}
-      <div className="flex items-center gap-4 mb-4">
-        {/* Keep YOUR existing Add Event button; it now opens EventsForm */}
-        <button
-          onClick={openBlankForm}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
-        >
-          Add Event
-        </button>
+     
+<div className="flex items-center gap-4 mb-4">
+  
+  <button
+    onClick={openBlankForm}
+    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
+  >
+    Add Event
+  </button>
 
-        {/* Status legend */}
-        <div className="flex gap-2">
-          {Object.entries(EVENT_STATUS).map(([status, { label, color }]) => (
-            <div
-              key={status}
-              className="flex items-center gap-2 rounded-full px-3 py-1 text-white text-sm font-medium"
-              style={{ background: color }}
-            >
-              {label}
-            </div>
-          ))}
-        </div>
+  {/* Event type KEY*/}
+  <div className="flex gap-2">
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-medium ${EVENT_TYPE_STYLES.MEETING}`}>
+      Meeting
+    </div>
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-medium ${EVENT_TYPE_STYLES["1ST_APPOINTMENT"]}`}>
+      1st Appointment
+    </div>
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-medium ${EVENT_TYPE_STYLES.PRESENTATION}`}>
+      Presentation
+    </div>
+    <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-white text-sm font-medium ${EVENT_TYPE_STYLES.EVENT}`}>
+      Event
+    </div>
+  </div>
 
-        <div className="flex-1" />
 
-        {/* Navigation + view buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => moveDate(-1)}
-            className="px-3 py-1 border rounded-md bg-white hover:bg-gray-100"
-          >
-            ◀
-          </button>
-          <button
-            onClick={() => setDate(new Date())}
-            className="px-3 py-1 border rounded-md bg-white hover:bg-gray-100"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => moveDate(1)}
-            className="px-3 py-1 border rounded-md bg-white hover:bg-gray-100"
-          >
-            ▶
-          </button>
-
-          <div className="w-4" />
-
-          {[
-            { key: Views.MONTH, label: "Month" },
-            { key: Views.WEEK, label: "Week" },
-            { key: Views.DAY, label: "Day" },
-            { key: Views.AGENDA, label: "Agenda" },
-          ].map((b) => (
-            <button
-              key={b.key}
-              onClick={() => setView(b.key)}
-              className={`px-3 py-1 rounded-md border ${
-                view === b.key
-                  ? "border-blue-600 bg-blue-50 font-semibold"
-                  : "border-gray-300 bg-white hover:bg-gray-100"
-              }`}
-            >
-              {b.label}
-            </button>
-          ))}
-        </div>
+        
       </div>
 
       {/* Calendar */}
       <div className="h-[75vh] min-h-[500px] border rounded-xl shadow-lg bg-white p-3">
         <Calendar
           localizer={localizer}
-          events={events}
+          events={mappedEvents}
           startAccessor="start"
           endAccessor="end"
           selectable
@@ -186,35 +200,100 @@ export default function UserCalendar() {
           date={date}
           onNavigate={(d) => setDate(d)}
           onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
           views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor:
-                EVENT_STATUS[event.status]?.color || EVENT_STATUS[1].color,
-              color: "white",
-              borderRadius: "0.75rem",
-              padding: "4px 8px",
-              border: "none",
-              fontWeight: "600",
-            },
-          })}
+          components={{ event: EventItem }}
+          eventPropGetter={(event) => {
+            const colorMap = {
+              MEETING: "rgba(37, 99, 235, 0.85)",       
+              "1ST_APPOINTMENT": "rgba(147, 51, 234, 0.85)", 
+              PRESENTATION: "rgba(22, 163, 74, 0.85)",  
+              EVENT: "rgba(219, 39, 119, 0.85)",        
+            };
+          
+            const backgroundColor = colorMap[event.event_type] || "rgba(75, 85, 99, 0.85)"; 
+          
+            return {
+              style: {
+                backgroundColor,
+                color: "white",
+                border: "none",
+                borderRadius: "0.5rem",
+                padding: "2px 4px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                lineHeight: "1.1",
+              },
+            };
+          }}
         />
       </div>
 
-      {/* Shared EventsForm modal (controlled here) */}
+      {/* Shared EventsForm modal*/}
       <EventsForm
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          // after closing, refresh to reflect any new items
-          fetchEvents();
-        }}
+        onClose={() => setModalOpen(false)}
         prefill={prefill}
-        onSaved={() => {
-          // if the Redux action completes, ensure UI is fresh
-          fetchEvents();
-        }}
+        onSaved={() => dispatch(fetchEventsThunk())}
       />
+     <Modal
+  isOpen={detailsOpen}
+  onRequestClose={() => setDetailsOpen(false)}
+  overlayClassName="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+  className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4 outline-none"
+>
+  {selectedEvent && (
+    <div>
+      <h2 className="text-xl font-bold mb-4">{selectedEvent.event_type}</h2>
+
+      <p><strong>Start:</strong> {new Date(selectedEvent.start_time).toLocaleString()}</p>
+      <p><strong>End:</strong> {new Date(selectedEvent.end_time).toLocaleString()}</p>
+      {selectedEvent.notes && (
+        <p><strong>Notes:</strong> {selectedEvent.notes}</p>
+      )}
+      {selectedEvent.link && (
+        <p>
+          <strong>Link:</strong>{" "}
+          <a
+            href={selectedEvent.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            {selectedEvent.link}
+          </a>
+        </p>
+      )}
+      {selectedEvent.host && <p><strong>Host:</strong> {selectedEvent.host}</p>}
+      {selectedEvent.location && <p><strong>Location:</strong> {selectedEvent.location}</p>}
+
+      {/* Buttons */}
+      <div className="flex justify-between mt-6">
+  <button
+    onClick={handleEdit}
+    className="px-4 py-2 rounded-lg bg-yellow-500 text-white font-medium hover:bg-yellow-600"
+  >
+    Edit
+  </button>
+
+  <button
+    onClick={handleDelete}
+    className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700"
+  >
+    Delete
+  </button>
+
+  <button
+    onClick={() => setDetailsOpen(false)}
+    className="px-4 py-2 rounded-lg bg-gray-400 text-white font-medium hover:bg-gray-500"
+  >
+    Close
+  </button>
+</div>
+    </div>
+  )}
+</Modal>
     </div>
   );
 }
