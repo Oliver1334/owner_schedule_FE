@@ -1,26 +1,26 @@
-/* ==== Base Calendar ==== */
+
 .rbc-calendar {
     background: #ffffff;
-    color: #111827; /* Tailwind gray-900 */
+    color: #111827; 
     font-family: "Inter", sans-serif;
-    /* No border/radius here – handled by wrapper to avoid misalignment */
+    
   }
   
-  /* ==== Grid Lines (color only, not width) ==== */
+
   .rbc-time-view,
   .rbc-month-view {
-    border-color: #e5e7eb; /* gray-200 */
+    border-color: #e5e7eb; 
   }
   
   .rbc-time-content > * + * {
-    border-left-color: #f3f4f6 !important; /* gray-100 */
+    border-left-color: #f3f4f6 !important; 
   }
   
   .rbc-time-header-content > .rbc-row > div + div {
     border-left-color: #f3f4f6 !important;
   }
   
-  /* Gutter (time column) – keep sizing intact */
+
   .rbc-time-gutter,
   .rbc-time-header-gutter {
     border-right-color: #e5e7eb;
@@ -29,43 +29,42 @@
     width: auto;
   }
   
-  /* ==== Toolbar ==== */
+
   .rbc-toolbar {
-    background: #f9fafb; /* gray-50 */
+    background: #f9fafb; 
     border-bottom: 1px solid #e5e7eb;
     padding: 0.5rem;
     font-weight: 600;
   }
   
-  /* Month/Week Header Label */
+
   .rbc-toolbar-label {
     font-size: 1.5rem;
     font-weight: 700;
     color: #111827;
   }
-  
-  /* ==== Visual Tweaks ==== */
+ 
   .rbc-off-range-bg {
-    background: #f9fafb !important; /* gray-50 */
+    background: #f9fafb !important; 
   }
   
   .rbc-today {
-    background: #eff6ff !important; /* blue-50 */
+    background: #eff6ff !important; 
   }
   
-  /* ==== Events ==== */
-  .rbc-event {
-    border: none;
-    border-radius: 0.5rem; /* rounded-md */
-    padding: 4px 6px;
-    font-size: 0.8rem; /* text-sm */
-    font-weight: 500;
+ 
+.rbc-event {
+    padding: 0 !important;
+    border-radius: 0.5rem !important; 
+    height: 10% !important;
+  }
+  
+  
+  .rbc-event-content {
+    height: auto;
     display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #111827;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .rbc-event:hover {
@@ -73,21 +72,26 @@
     opacity: 0.95;
   }
   
-  /* Optional: icon inside event */
+  
   .rbc-event .event-icon {
     font-size: 0.9rem;
     opacity: 0.8;
   }
+
   
-  /* ==== Agenda View ==== */
+.rbc-event-label {
+    display: none !important;
+  }
+  
+  
   .rbc-agenda-date-cell,
   .rbc-agenda-time-cell {
-    color: #374151; /* gray-700 */
+    color: #374151; 
     font-weight: 500;
   }
   
   .rbc-agenda-event-cell {
-    color: #111827; /* gray-900 */
+    color: #111827; 
     font-weight: 500;
   }
   

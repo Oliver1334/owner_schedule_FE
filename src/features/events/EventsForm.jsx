@@ -1,15 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { createEvent } from "./eventsSlice";
 import Modal from "react-modal";
-
+import { createEvent, updateEvent } from "./eventsSlice";
+import { FaUsers, FaUserPlus, FaChartBar, FaCalendarAlt } from "react-icons/fa";
 Modal.setAppElement("#root");
 
 const EVENT_TYPES = [
-  { key: "MEETING", label: "Meeting", icon: "👥", color: "bg-blue-100 text-blue-600" },
-  { key: "1ST_APPOINTMENT", label: "1st App.", icon: "➕", color: "bg-purple-100 text-purple-600" },
-  { key: "PRESENTATION", label: "Pres.", icon: "📊", color: "bg-green-100 text-green-600" },
-  { key: "EVENT", label: "Event", icon: "📅", color: "bg-pink-100 text-pink-600" },
+  {
+    key: "MEETING",
+    label: "Meeting",
+    icon: <FaUsers size={20} />, 
+    color: "bg-blue-100 text-blue-600",
+  },
+  {
+    key: "1ST_APPOINTMENT",
+    label: "1st App.",
+    icon: <FaUserPlus size={20} />,
+    color: "bg-purple-100 text-purple-600",
+  },
+  {
+    key: "PRESENTATION",
+    label: "Pres.",
+    icon: <FaChartBar size={20} />, 
+    color: "bg-green-100 text-green-600",
+  },
+  {
+    key: "EVENT",
+    label: "Event",
+    icon: <FaCalendarAlt size={20} />, 
+    color: "bg-pink-100 text-pink-600",
+  },
 ];
 
 const MEETING_TYPES = [
@@ -20,7 +40,13 @@ const MEETING_TYPES = [
   { key: "OTHER", label: "Other" },
 ];
 
-const HOSTS = ["Alice", "Bob", "Chris", "David", "Emma"];
+const HOSTS = [
+  { key: "ROBERT_MILLER", label: "Robert Miller" },
+  { key: "STIG_MILLER", label: "Stig Miller" },
+  { key: "TRACY_PEW", label: "Tracy Pew" },
+  { key: "KLAUS_NOMI", label: "Klaus Nomi" },
+  { key: "ROSE_MCDOWALL", label: "Rose McDowall" },
+];
 
 const RECURRENCE_CHOICES = [
   { key: "NONE", label: "Never" },
@@ -30,18 +56,11 @@ const RECURRENCE_CHOICES = [
   { key: "FORTNIGHTLY", label: "Fortnightly" },
 ];
 
-/**
- * Controlled modal form.
- * Props:
- *  - isOpen: boolean
- *  - onClose: () => void
- *  - prefill: { startTime?: string, endTime?: string, eventType?: string }
- *  - onSaved?: (createdPayload) => void   // optional: notify parent after dispatch
- */
+
 export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
   const dispatch = useDispatch();
 
-  // form state
+  
   const [eventType, setEventType] = useState("MEETING");
   const [meetingType, setMeetingType] = useState("");
   const [host, setHost] = useState("");
@@ -71,7 +90,7 @@ export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
     e.preventDefault();
 
     const payload = {
-      title: eventType, // if you later want a separate title, add it here
+      title: eventType,
       start_time: startTime,
       end_time: endTime,
       event_type: eventType,
@@ -86,10 +105,16 @@ export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
       location: eventType === "EVENT" ? location : null,
     };
 
-    // dispatch to Redux/backend
     try {
-      const action = await dispatch(createEvent(payload));
-      // optional notify parent
+      let action;
+      if (prefill?.id) {
+       
+        action = await dispatch(updateEvent({ id: prefill.id, data: payload }));
+      } else {
+        
+        action = await dispatch(createEvent(payload));
+      }
+
       if (onSaved) onSaved(payload, action);
     } finally {
       onClose();
@@ -106,7 +131,9 @@ export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Event type buttons */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Event Type</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            Event Type
+          </h3>
           <div className="grid grid-cols-4 gap-3">
             {EVENT_TYPES.map((opt) => (
               <button
@@ -159,8 +186,8 @@ export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
             >
               <option value="">Select...</option>
               {HOSTS.map((h) => (
-                <option key={h} value={h}>
-                  {h}
+                <option key={h.key} value={h.key}>
+                  {h.label}
                 </option>
               ))}
             </select>
@@ -204,7 +231,7 @@ export default function EventsForm({ isOpen, onClose, prefill, onSaved }) {
             type="datetime-local"
             required
             value={endTime}
-            onChange={(e) => setEndEndTime(e.target.value)}
+            onChange={(e) => setEndTime(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
           />
         </div>
