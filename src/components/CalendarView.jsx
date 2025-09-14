@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import {
   format,
@@ -9,7 +9,8 @@ import {
 } from "date-fns";
 import { enGB } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "../CalendarOverrides.css"; // keep overrides for rbc internals
+import "../CalendarOverrides.css";
+import EventsForm from "../features/events/EventsForm";
 
 /** ---- Localizer ---- */
 const locales = { "en-GB": enGB };
@@ -21,18 +22,17 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-/** ---- Status mapping ---- */
+/** ---- Status mapping (for event coloring) ---- */
 const EVENT_STATUS = {
-  1: { label: "Pending", color: "#718096" }, // gray
-  2: { label: "Confirmed", color: "#38A169" }, // green
-  3: { label: "In Progress", color: "#D69E2E" }, // gold
-  4: { label: "Completed", color: "#3182CE" }, // blue
-  5: { label: "Cancelled", color: "#9F7AEA" }, // purple
+  1: { label: "Pending", color: "#718096" },
+  2: { label: "Confirmed", color: "#38A169" },
+  3: { label: "In Progress", color: "#D69E2E" },
+  4: { label: "Completed", color: "#3182CE" },
+  5: { label: "Cancelled", color: "#9F7AEA" },
 };
 
 /** ---- Helpers ---- */
 const parseDate = (d) => (typeof d === "string" ? parseISO(d) : new Date(d));
-
 const toDatetimeLocal = (date) => {
   if (!date) return "";
   const d = new Date(date);
@@ -45,35 +45,32 @@ export default function UserCalendar() {
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState(Views.WEEK);
 
+  // control EventsForm modal
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    start: "",
-    end: "",
-    status: "1",
-  });
+  const [prefill, setPrefill] = useState(null);
 
   /** Fetch events from Django backend */
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/events");
-        const data = await res.json();
-        const mapped = data.map((e) => ({
-          id: e.id ?? e.pk,
-          title: e.title ?? e.name ?? "Event",
-          start: parseDate(e.start_time ?? e.start),
-          end: parseDate(e.end_time ?? e.end),
-          status: e.status ?? 1,
-          raw: e,
-        }));
-        setEvents(mapped);
-      } catch (err) {
-        console.error("Failed to fetch events:", err);
-      }
+  const fetchEvents = useCallback(async () => {
+    try {
+      const res = await fetch("/api/events");
+      const data = await res.json();
+      const mapped = data.map((e) => ({
+        id: e.id ?? e.pk,
+        title: e.title ?? e.name ?? "Event",
+        start: parseDate(e.start_time ?? e.start),
+        end: parseDate(e.end_time ?? e.end),
+        status: e.status ?? 1,
+        raw: e,
+      }));
+      setEvents(mapped);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   /** Navigation */
   const moveDate = (direction) => {
@@ -85,69 +82,33 @@ export default function UserCalendar() {
     setDate(new Date(d));
   };
 
-  /** Slot selection -> open modal */
-  const handleSelectSlot = (slotInfo) => {
-    setForm({
-      title: "",
-      start: toDatetimeLocal(slotInfo.start),
-      end: toDatetimeLocal(slotInfo.end),
-      status: "1",
+  /** Toolbar Add Event -> open EventsForm */
+  const openBlankForm = () => {
+    setPrefill({
+      startTime: toDatetimeLocal(new Date()),
+      endTime: toDatetimeLocal(new Date(Date.now() + 60 * 60 * 1000)),
+      eventType: "MEETING",
     });
     setModalOpen(true);
   };
 
-  /** Submit new event */
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
-
-    const payload = {
-      title: form.title,
-      start_time: new Date(form.start).toISOString(),
-      end_time: new Date(form.end).toISOString(),
-      status: Number(form.status),
-    };
-
-    try {
-      const res = await fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const created = await res.json();
-
-      const mapped = {
-        id: created.id ?? created.pk,
-        title: created.title ?? payload.title,
-        start: parseDate(created.start_time ?? created.start ?? payload.start_time),
-        end: parseDate(created.end_time ?? created.end ?? payload.end_time),
-        status: created.status ?? payload.status,
-        raw: created,
-      };
-      setEvents((prev) => [...prev, mapped]);
-
-      setModalOpen(false);
-      setForm({ title: "", start: "", end: "", status: "1" });
-    } catch (err) {
-      console.error("Failed to create event:", err);
-    }
+  /** Slot selection -> open EventsForm with prefilled start/end */
+  const handleSelectSlot = (slotInfo) => {
+    setPrefill({
+      startTime: toDatetimeLocal(slotInfo.start),
+      endTime: toDatetimeLocal(slotInfo.end),
+      eventType: "MEETING",
+    });
+    setModalOpen(true);
   };
 
   return (
     <div className="p-5 font-sans">
       {/* Top toolbar */}
       <div className="flex items-center gap-4 mb-4">
-        {/* Add Event */}
+        {/* Keep YOUR existing Add Event button; it now opens EventsForm */}
         <button
-          onClick={() => {
-            setForm({
-              title: "",
-              start: toDatetimeLocal(new Date()),
-              end: toDatetimeLocal(new Date(Date.now() + 60 * 60 * 1000)),
-              status: "1",
-            });
-            setModalOpen(true);
-          }}
+          onClick={openBlankForm}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
         >
           Add Event
@@ -213,7 +174,7 @@ export default function UserCalendar() {
       </div>
 
       {/* Calendar */}
-      <div className="h-[75vh] min-h-[500px] border rounded-lg shadow-md p-2">
+      <div className="h-[75vh] min-h-[500px] border rounded-xl shadow-lg bg-white p-3">
         <Calendar
           localizer={localizer}
           events={events}
@@ -228,102 +189,32 @@ export default function UserCalendar() {
           views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
           eventPropGetter={(event) => ({
             style: {
-              backgroundColor: EVENT_STATUS[event.status]?.color || EVENT_STATUS[1].color,
+              backgroundColor:
+                EVENT_STATUS[event.status]?.color || EVENT_STATUS[1].color,
               color: "white",
-              borderRadius: "0.5rem",
-              padding: "2px 6px",
+              borderRadius: "0.75rem",
+              padding: "4px 8px",
               border: "none",
+              fontWeight: "600",
             },
           })}
         />
       </div>
 
-      {/* Modal */}
-      {modalOpen && (
-        <div
-          role="dialog"
-          aria-modal
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setModalOpen(false)}
-        >
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 space-y-5"
-          >
-            <h3 className="text-lg font-semibold text-gray-900">Add Event</h3>
-
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                required
-                value={form.title}
-                onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
-                placeholder="Meeting, Appointment..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-
-            {/* Start */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
-              <input
-                required
-                type="datetime-local"
-                value={form.start}
-                onChange={(e) => setForm((s) => ({ ...s, start: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-
-            {/* End */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End</label>
-              <input
-                required
-                type="datetime-local"
-                value={form.end}
-                onChange={(e) => setForm((s) => ({ ...s, end: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm((s) => ({ ...s, status: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-              >
-                {Object.entries(EVENT_STATUS).map(([k, { label }]) => (
-                  <option key={k} value={k}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-400"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Shared EventsForm modal (controlled here) */}
+      <EventsForm
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          // after closing, refresh to reflect any new items
+          fetchEvents();
+        }}
+        prefill={prefill}
+        onSaved={() => {
+          // if the Redux action completes, ensure UI is fresh
+          fetchEvents();
+        }}
+      />
     </div>
   );
 }

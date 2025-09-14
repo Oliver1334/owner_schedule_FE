@@ -1,59 +1,93 @@
-/* Calendar background & text */
+/* ==== Base Calendar ==== */
 .rbc-calendar {
-  background: #ffffff;
-  color: #111111;
-  font-family: "Inter", sans-serif;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-/* Grid lines */
-.rbc-time-view,
-.rbc-month-view {
-  border-color: #ddd;
-}
-
-.rbc-time-content > * + * > * {
-  border-color: #eee;
-}
-
-/* Toolbar (if using built-in one) */
-.rbc-toolbar {
-  background: #f9f9f9;
-  border-bottom: 1px solid #ddd;
-  padding: 8px;
-  font-weight: 600;
-}
-
-/* Remove the pale strip (off-range days in week view) */
-.rbc-off-range-bg {
-  background: #fff !important;
-}
-
-/* Events */
-.rbc-event {
-  border: none;
-  border-radius: 6px;
-  padding: 2px 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #fff;
-}
-
-/* Today highlight */
-.rbc-today {
-  background: #f0f8ff !important; /* light blue highlight for today */
-}
-
-/* Time gutter (times on left) */
-.rbc-time-gutter {
-  color: #444;
-  background: #fafafa;
-  border-right: 1px solid #ddd;
-}
-
-/* Agenda view tweaks */
-.rbc-agenda-date-cell,
-.rbc-agenda-time-cell {
-  color: #333;
-}
+    background: #ffffff;
+    color: #111827; /* Tailwind gray-900 */
+    font-family: "Inter", sans-serif;
+    /* No border/radius here – handled by wrapper to avoid misalignment */
+  }
+  
+  /* ==== Grid Lines (color only, not width) ==== */
+  .rbc-time-view,
+  .rbc-month-view {
+    border-color: #e5e7eb; /* gray-200 */
+  }
+  
+  .rbc-time-content > * + * {
+    border-left-color: #f3f4f6 !important; /* gray-100 */
+  }
+  
+  .rbc-time-header-content > .rbc-row > div + div {
+    border-left-color: #f3f4f6 !important;
+  }
+  
+  /* Gutter (time column) – keep sizing intact */
+  .rbc-time-gutter,
+  .rbc-time-header-gutter {
+    border-right-color: #e5e7eb;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: auto;
+  }
+  
+  /* ==== Toolbar ==== */
+  .rbc-toolbar {
+    background: #f9fafb; /* gray-50 */
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    font-weight: 600;
+  }
+  
+  /* Month/Week Header Label */
+  .rbc-toolbar-label {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  /* ==== Visual Tweaks ==== */
+  .rbc-off-range-bg {
+    background: #f9fafb !important; /* gray-50 */
+  }
+  
+  .rbc-today {
+    background: #eff6ff !important; /* blue-50 */
+  }
+  
+  /* ==== Events ==== */
+  .rbc-event {
+    border: none;
+    border-radius: 0.5rem; /* rounded-md */
+    padding: 4px 6px;
+    font-size: 0.8rem; /* text-sm */
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #111827;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  
+  .rbc-event:hover {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+  
+  /* Optional: icon inside event */
+  .rbc-event .event-icon {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+  
+  /* ==== Agenda View ==== */
+  .rbc-agenda-date-cell,
+  .rbc-agenda-time-cell {
+    color: #374151; /* gray-700 */
+    font-weight: 500;
+  }
+  
+  .rbc-agenda-event-cell {
+    color: #111827; /* gray-900 */
+    font-weight: 500;
+  }
+  
