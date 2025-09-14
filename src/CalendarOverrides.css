@@ -1,0 +1,59 @@
+/* Calendar background & text */
+.rbc-calendar {
+  background: #ffffff;
+  color: #111111;
+  font-family: "Inter", sans-serif;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Grid lines */
+.rbc-time-view,
+.rbc-month-view {
+  border-color: #ddd;
+}
+
+.rbc-time-content > * + * > * {
+  border-color: #eee;
+}
+
+/* Toolbar (if using built-in one) */
+.rbc-toolbar {
+  background: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+  padding: 8px;
+  font-weight: 600;
+}
+
+/* Remove the pale strip (off-range days in week view) */
+.rbc-off-range-bg {
+  background: #fff !important;
+}
+
+/* Events */
+.rbc-event {
+  border: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* Today highlight */
+.rbc-today {
+  background: #f0f8ff !important; /* light blue highlight for today */
+}
+
+/* Time gutter (times on left) */
+.rbc-time-gutter {
+  color: #444;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+}
+
+/* Agenda view tweaks */
+.rbc-agenda-date-cell,
+.rbc-agenda-time-cell {
+  color: #333;
+}
