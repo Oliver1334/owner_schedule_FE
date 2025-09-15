@@ -1,11 +1,11 @@
 # Owner’s Schedule 📅
 
 A mini Google/Apple-Calendar–style scheduler with event CRUD, modals, and a clean UI.  
-Built with **React + Vite + Redux Toolkit** on the frontend and **Django REST + PostgreSQL** on the backend.
+Built with **React + Vite + Redux Toolkit** frontend and **Django REST + PostgreSQL** backend.
 
 ---
 
-## 🚀 Features Implemented
+## Features Implemented
 
 - Week/Day/Month views using **react-big-calendar**.  
 - **Event CRUD** (create, edit, delete) with Redux Toolkit thunks wired to Django REST API.  
@@ -20,7 +20,7 @@ Built with **React + Vite + Redux Toolkit** on the frontend and **Django REST + 
 
 ---
 
-## ⚠️ Known Limitations
+## Known Limitations
 
 - **Recurrence**: Events are single only, no RRULE expansion yet.  
 - **Exceptions**: No “edit this only / this + future / all in series” yet.  
@@ -30,31 +30,21 @@ Built with **React + Vite + Redux Toolkit** on the frontend and **Django REST + 
 
 ---
 
-## 🛠 Architecture Decisions
+## Architecture Decisions
 
 - **State management**: Redux Toolkit + async thunks for API calls.  
 - **UI library**: react-big-calendar for grid view, styled with Tailwind and overrides.  
 - **Backend**: Django REST Framework + PostgreSQL with REST endpoints at `/api/events/`.  
-- **Modal-driven flows**: All create/edit/details flows use modals to reduce UI flicker.  
-- **Event structure**: Events map backend data into react-big-calendar props (`start`, `end`, `title`).  
+- **Modal-driven flows**: All create/edit/details flows use modals to reduce UI flicker.   
 
 ---
 
-## 🔧 Tech Stack
-
-- **Frontend**: React, Vite, Redux Toolkit, Tailwind CSS, React Icons  
-- **Calendar**: react-big-calendar + date-fns  
-- **Backend**: Django REST Framework, PostgreSQL  
-- **API**: REST JSON endpoints (`/api/events/`)  
-
----
-
-## ⏭ Next Steps (With More Time)
+## Next Steps (With More Time)
 
 ### 1. Recurrence & Expanded Occurrences
-- Store recurrence rules in backend (RRULE string).  
-- Use [`rrule`](https://github.com/jakubroztocil/rrule) in frontend to expand occurrences dynamically.  
-- Render expanded events in react-big-calendar as virtual instances.  
+- Store recurrence rules in backend.  
+- Use in frontend to expand occurrences dynamically.  
+- Render expanded events in react-big-calendar.  
 
 ### 2. Exception Editing
 - Add `series_id` + `is_exception` fields in backend model.  
@@ -65,18 +55,16 @@ Built with **React + Vite + Redux Toolkit** on the frontend and **Django REST + 
 
 ### 3. Time Zones
 - Store all timestamps in UTC in PostgreSQL.  
-- Convert/display using `date-fns-tz` or `luxon` (`toZonedTime`).  
+- Convert/display using `date-fns-tz` (`toZonedTime`).  
 - Add user setting for preferred timezone (default: Europe/London).  
 - Ensure **DST/BST transitions** are respected.  
 
-### 4. Stretch Goals
-- Drag/drop and resize events (`onEventDrop`, `onEventResize`).  
-- Basic accessibility (keyboard navigation, screen reader support).  
-- Testing edge cases (DST transitions, recurring event overlaps).  
+### 4. Styling
+- Understand React-Big-Calendar styling options more extensively.
+- Live time marker visible on calendar.
+- Accurate time blocks for events mapped on calendar.  
 
----
-
-## 🧪 Backend Testing (Future Work)
+##  Backend Testing
 
 With more time, I’d implement backend test coverage using **pytest** or Django’s test framework:
 
@@ -102,14 +90,12 @@ With more time, I’d implement backend test coverage using **pytest** or Django
 - Prevent overlaps for same host (if required).  
 - Recurrence + exceptions should not create infinite loops.  
 
-### Performance
-- Stress-test fetching thousands of expanded events.  
-- Paginate long-running series.  
-- Concurrent create/delete requests.  
-
 ### Security
 - Auth checks: only owners can edit/delete their events.  
 - Invalid IDs → `404 Not Found`.  
-- Confirm no SQL injection (ORM safety).  
+- Confirm no SQL injection (ORM safety).
+
+### Frontend Error Handling
+- Error handling for forms to ensure correct data is entered to payloads.
 
 ---
