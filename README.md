@@ -3,12 +3,15 @@
 A mini Google/Apple-Calendar–style scheduler with event CRUD, modals, and a clean UI.  
 Built with **React + Vite + Redux Toolkit** frontend and **Django REST + PostgreSQL** backend.
 
+Deployed App: https://owner-schedule-fe.onrender.com/
+
 ---
 
 ## Features Implemented
 
 - Week/Day/Month views using **react-big-calendar**.  
-- **Event CRUD** (create, edit, delete) with Redux Toolkit thunks wired to Django REST API.  
+- **Event CRUD** (create, edit, delete) with Redux Toolkit thunks wired to Django REST API.
+- **Drag to Create** Click drag to create event timeslot.
 - **Event form modal** with event-type–specific fields:
   - Meeting → meeting type (morning, client, etc.)  
   - 1st Appointment / Presentation → host  
@@ -74,7 +77,6 @@ With more time, I’d implement backend test coverage using **pytest** or Django
 
 ### Recurrence expansion
 - Test `RRULE` parsing (daily, weekly, fortnightly, workdays).  
-- Boundary cases: `UNTIL`, `COUNT`, leap years (Feb 29).  
 
 ### Exception handling
 - Verify “this event only”, “this + future”, “all in series” edit/delete scopes.  
@@ -82,18 +84,12 @@ With more time, I’d implement backend test coverage using **pytest** or Django
 
 ### Time zones & DST
 - Store in UTC, fetch in `Europe/London`.  
-- Test across DST shifts (March/October).  
-- Edge case: ambiguous/invalid times (e.g. 01:30 at DST switch).  
+- User setting to display timezone.
 
 ### Validation
 - Start time before end time.  
 - Prevent overlaps for same host (if required).  
 - Recurrence + exceptions should not create infinite loops.  
-
-### Security
-- Auth checks: only owners can edit/delete their events.  
-- Invalid IDs → `404 Not Found`.  
-- Confirm no SQL injection (ORM safety).
 
 ### Frontend Error Handling
 - Error handling for forms to ensure correct data is entered to payloads.
