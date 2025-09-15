@@ -44,25 +44,29 @@ Deployed App: https://owner-schedule-fe.onrender.com/
 
 ## Next Steps (With More Time)
 
-### 1. Recurrence & Expanded Occurrences
+### CRUD Polish
+- Editing an event brings up prefilled event information to change.
+- Loading for scheduled event deletion.
+
+### Recurrence & Expanded Occurrences
 - Store recurrence rules in backend.  
 - Use in frontend to expand occurrences dynamically.  
 - Render expanded events in react-big-calendar.  
 
-### 2. Exception Editing
+### Exception Editing
 - Add `series_id` + `is_exception` fields in backend model.  
 - On edit/delete, provide options:  
   - **This event only** → create an exception override.  
   - **This + future** → split the RRULE into two rules.  
   - **All in series** → update base recurrence.  
 
-### 3. Time Zones
+### Time Zones
 - Store all timestamps in UTC in PostgreSQL.  
 - Convert/display using `date-fns-tz` (`toZonedTime`).  
 - Add user setting for preferred timezone (default: Europe/London).  
 - Ensure **DST/BST transitions** are respected.  
 
-### 4. Styling
+### Styling
 - Understand React-Big-Calendar styling options more extensively.
 - Live time marker visible on calendar.
 - Accurate time blocks for events mapped on calendar.  
